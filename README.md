@@ -4,7 +4,7 @@ Ovaj kod demonstrira korišćenje deljenog memorijskog segmenta u operativnom si
 
 ## Instalacija
 
-1. Klonirajte repozitorijum:
+**1. Klonirajte repozitorijum:
 
    git clone https://github.com/alexazivkovic/aros.git
 

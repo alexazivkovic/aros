@@ -10,7 +10,7 @@ Ovaj kod demonstrira korišćenje deljenog memorijskog segmenta u operativnom si
 
 2.1. Komplajlirajte kod koristeci 'gcc' kompajler
 
-   gcc shmsmp.c -o shmsmp.exe -pthread
+   gcc shmsmp.c -o shmsmp -pthread
 
 2.2. Kompajlirajte kod koristeci 'makefile'
 

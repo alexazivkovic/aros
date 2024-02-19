@@ -1,2 +1,2 @@
 file: shmsmp.c
-  gcc shmsmp.c -o shmsmp.exe -pthread
+  gcc shmsmp.c -o shmsmp -pthread

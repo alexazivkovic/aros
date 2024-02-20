@@ -11,13 +11,13 @@
 #include <errno.h>
 #include <sys/wait.h>
 
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 1024
 #define MAX_MESSAGES 10
 #define FILE_NAME "file"
 #define ERROR (-1)
-#define SEM_READ_NAME "/sem_read2"
-#define SEM_WRITE_NAME "/sem_write2"
-#define SEM_MUTEX_NAME "/sem_mutex2"
+#define SEM_READ_NAME "/sem_read"
+#define SEM_WRITE_NAME "/sem_write"
+#define SEM_MUTEX_NAME "/sem_mutex"
 
 sem_t *sem_read;
 sem_t *sem_write;
@@ -66,6 +66,12 @@ bool destroy_semaphore(sem_t *sem, char* name) {
 }
 
 int main(int argc, char* argv[]) {
+    int fd = open(FILE_NAME, O_RDWR | O_CREAT, 0666);
+    if (fd == -1) {
+        perror("open");
+        return 1;
+    }
+    close(fd);
     block = attach_memory_block(FILE_NAME, BLOCK_SIZE * MAX_MESSAGES);
     if (block == NULL) {
         printf("[-] Error! Unable to get shared memory block!");
@@ -75,12 +81,12 @@ int main(int argc, char* argv[]) {
     }
 
     sem_read = initialize_semaphore(SEM_READ_NAME, 0);
-    sem_write = initialize_semaphore(SEM_WRITE_NAME,10);
+    sem_write = initialize_semaphore(SEM_WRITE_NAME, 10);
     sem_mutex = initialize_semaphore(SEM_MUTEX_NAME, 1);
     if (sem_read != SEM_FAILED && sem_write != SEM_FAILED && sem_mutex != SEM_FAILED) {
         printf("[+] Semaphores initialized successfully!\n");
     } else {
-        printf("[-] Error! Unable to initialize semaphores!\n");;
+        printf("[-] Error! Unable to initialize semaphores!\n");
         return -1;
     }
 
@@ -91,25 +97,35 @@ int main(int argc, char* argv[]) {
     } else {
         for (int i = 0; i < 15; i++) {
             if (pid == 0) {
-                sem_wait(sem_write);
-                sem_wait(sem_mutex);
                 int n;
+                sem_getvalue(sem_write, &n);
+                if(n < 1){
+                        sem_wait(sem_write);
+                        sem_post(sem_write);
+                }
+                sem_wait(sem_mutex);
+                sem_wait(sem_write);
                 sem_getvalue(sem_read, &n);
-                strcpy(block + n * BLOCK_SIZE, "bobi");
-                printf("[+] Process %d wrote bobi to shared memory on %d. place in array\n", getpid(), n);
-                sem_post(sem_mutex);
+                strcpy(block + n * BLOCK_SIZE, "neka poruka");
+                printf("[+] Process %d wrote `neka poruka` to shared memory on %d. place in array\n", getpid(), n);
                 sem_post(sem_read);
+                sem_post(sem_mutex);
                 //sleep(1);
             } else {
-                sem_wait(sem_read);
-                sem_wait(sem_mutex);
                 int n;
+                sem_getvalue(sem_read, &n);
+                if(n < 1){
+                        sem_wait(sem_read);
+                        sem_post(sem_read);
+                }
+                sem_wait(sem_mutex);
+                sem_wait(sem_read);
                 sem_getvalue(sem_read, &n);
                 char message[BLOCK_SIZE];
                 strcpy(message, block + n * BLOCK_SIZE);
-                printf("[+] Process %d read %s from shared memory on %d. place in array\n", getpid(), message, n);
-                sem_post(sem_mutex);
+                printf("[+] Process %d read `%s` from shared memory on %d. place in array\n", getpid(), message, n);
                 sem_post(sem_write);
+                sem_post(sem_mutex);
                 //sleep(1);
             }
         }
